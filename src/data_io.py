@@ -79,3 +79,44 @@ def get_event_statistics(df_parsed):
                     .count() \
                     .orderBy("count", ascending=False)
 
+
+def save_sequences(df_sequences, output_path=None, mode="overwrite"):
+    """
+    Save event sequences to Parquet format.
+    
+    Args:
+        df_sequences: DataFrame with sequences to save
+        output_path: Output path (defaults to config.SEQUENCES_PATH)
+        mode: Write mode (default: "overwrite")
+    
+    Returns:
+        None
+    """
+    if output_path is None:
+        output_path = config.SEQUENCES_PATH
+    
+    print(f"\n=== Saving event sequences to {output_path} ===")
+    df_sequences.write.mode(mode).parquet(output_path)
+    print(f"✓ Event sequences saved successfully! ({df_sequences.count()} sequences)")
+
+
+def load_sequences(spark, input_path=None):
+    """
+    Load previously built event sequences from Parquet format.
+    
+    Args:
+        spark: SparkSession
+        input_path: Input path (defaults to config.SEQUENCES_PATH)
+    
+    Returns:
+        DataFrame with event sequences
+    """
+    if input_path is None:
+        input_path = config.SEQUENCES_PATH
+    
+    print(f"\n=== Loading event sequences from {input_path} ===")
+    df_sequences = spark.read.parquet(input_path)
+    print(f"✓ Loaded {df_sequences.count()} sequences")
+    
+    return df_sequences
+

@@ -7,6 +7,7 @@ Contains all paths, settings, and Spark configurations.
 LOG_PATH = "data/HDFS.log"
 TEMPLATE_PATH = "data/HDFS_templates.csv"
 PARSED_LOGS_PATH = "data/parsed_logs"
+SEQUENCES_PATH = "data/event_sequences"
 
 # Spark configuration
 SPARK_CONFIG = {
@@ -16,6 +17,10 @@ SPARK_CONFIG = {
     "spark.driver.memory": "4g",
     "spark.sql.adaptive.enabled": "true",  # Enable adaptive query execution
     "spark.sql.adaptive.coalescePartitions.enabled": "true",
+    "spark.sql.files.maxPartitionBytes": "134217728",  # 128MB - optimize partition size
+    "spark.sql.adaptive.advisoryPartitionSizeInBytes": "134217728",  # 128MB
+    "spark.memory.fraction": "0.8",  # Use 80% of heap for execution/storage
+    "spark.memory.storageFraction": "0.3",  # 30% for storage, 70% for execution
 }
 
 # Log parsing settings
