@@ -90,7 +90,7 @@ def run_step1(force_reparse=False, log_path=None, template_path=None):
         blocks_with_events = df_parsed.filter(
             (col("BlockId").isNotNull()) & (col("EventId").isNotNull())
         ).select("BlockId").distinct().count()
-        
+          
         print("\n" + "─" * 70)
         print("Summary:")
         print(f"  • Total log entries: {total_logs:,}")

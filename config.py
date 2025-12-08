@@ -34,3 +34,21 @@ BLOCK_ID_PATTERN = r"blk_(-?\d+)"
 # Maximum number of parameters to extract per event
 MAX_PARAMETERS = 3
 
+# Preprocessing settings (Step 3)
+PREPROCESSED_DATA_PATH = "data/preprocessed"
+MAX_SEQUENCE_LENGTH = 100  # Pad/truncate sequences to this length
+MIN_SEQUENCE_LENGTH = 2    # Filter out sequences shorter than this
+MAX_SEQUENCE_LENGTH_FILTER = None  # None = no max filter, or set to int
+
+# Data splitting
+TRAIN_RATIO = 0.7
+VAL_RATIO = 0.15
+TEST_RATIO = 0.15
+
+# Training settings (for DataLoaders)
+BATCH_SIZE = 32
+RANDOM_SEED = 42
+
+# Vocabulary settings
+MIN_EVENT_FREQ = 1  # Minimum frequency for event to be in vocabulary
+

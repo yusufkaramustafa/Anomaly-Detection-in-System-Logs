@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from steps.step1_parse_logs import run_step1
 from steps.step2_build_sequences import run_step2
+from steps.step3_preprocess import run_step3
 
 
 def print_banner():
@@ -31,9 +32,10 @@ def print_step_info():
     print("\n📋 Available Steps:")
     print("  Step 1: Parse raw HDFS logs and match to event templates")
     print("  Step 2: Build event sequences by block ID")
-    print("  Step 3: Train unsupervised model (LSTM/Transformer) - Coming soon")
-    print("  Step 4: Generate anomaly scores - Coming soon")
-    print("  Step 5: Evaluate and visualize results - Coming soon")
+    print("  Step 3: Preprocess sequences for model training")
+    print("  Step 4: Train unsupervised model (LSTM/Transformer) - Coming soon")
+    print("  Step 5: Generate anomaly scores - Coming soon")
+    print("  Step 6: Evaluate and visualize results - Coming soon")
     print()
 
 
@@ -45,17 +47,19 @@ def main():
         epilog="""
 Examples:
   python run.py step1                    # Run step 1
-  python run.py step1 --force            # Force re-parse
+  python run.py step1 --force-parse      # Force re-parse
   python run.py step2                    # Run step 2
   python run.py step2 --min-length 2     # Filter sequences with min length 2
+  python run.py step3                    # Preprocess sequences
+  python run.py step3 --max-seq-length 50 # Custom sequence length
   python run.py all                      # Run all available steps
         """
     )
     
     parser.add_argument(
         "step",
-        choices=["step1", "step2", "all", "info"],
-        help="Step to execute (step1, step2, all, or info)"
+        choices=["step1", "step2", "step3", "all", "info"],
+        help="Step to execute (step1, step2, step3, all, or info)"
     )
     
     # Step 1 arguments
@@ -91,6 +95,25 @@ Examples:
         help="Minimum sequence length to keep (Step 2, default: 1)"
     )
     
+    # Step 3 arguments
+    parser.add_argument(
+        "--force-reprocess",
+        action="store_true",
+        help="Force reprocessing even if preprocessed data exists (Step 3)"
+    )
+    
+    parser.add_argument(
+        "--max-seq-length",
+        type=int,
+        help="Maximum sequence length for padding (Step 3)"
+    )
+    
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        help="Batch size for DataLoaders (Step 3)"
+    )
+    
     args = parser.parse_args()
     
     # Print banner
@@ -120,11 +143,21 @@ Examples:
             )
             print()
         
+        if args.step == "step3" or args.step == "all":
+            print("\n🚀 Starting Step 3...\n")
+            run_step3(
+                force_reprocess=args.force_reprocess,
+                max_seq_length=args.max_seq_length,
+                min_seq_length=args.min_length,
+                batch_size=args.batch_size
+            )
+            print()
+        
         if args.step == "all":
             print("\n" + "=" * 70)
             print("✅ All steps completed successfully!")
             print("=" * 70)
-            print("\nNext: Run Step 3 to train the unsupervised model")
+            print("\nNext: Run Step 4 to train the unsupervised model")
             print()
     
     except KeyboardInterrupt:
