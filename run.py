@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from steps.step1_parse_logs import run_step1
 from steps.step2_build_sequences import run_step2
 from steps.step3_preprocess import run_step3
+from steps.step4_train_model import run_step4
 
 
 def print_banner():
@@ -33,9 +34,9 @@ def print_step_info():
     print("  Step 1: Parse raw HDFS logs and match to event templates")
     print("  Step 2: Build event sequences by block ID")
     print("  Step 3: Preprocess sequences for model training")
-    print("  Step 4: Train unsupervised model (LSTM/Transformer) - Coming soon")
-    print("  Step 5: Generate anomaly scores - Coming soon")
-    print("  Step 6: Evaluate and visualize results - Coming soon")
+    print("  Step 4: Train LSTM Autoencoder for anomaly detection")
+    print("  Step 5: Generate anomaly scores and evaluate - Coming soon")
+    print("  Step 6: Visualize results - Coming soon")
     print()
 
 
@@ -52,14 +53,16 @@ Examples:
   python run.py step2 --min-length 2     # Filter sequences with min length 2
   python run.py step3                    # Preprocess sequences
   python run.py step3 --max-seq-length 50 # Custom sequence length
+  python run.py step4                    # Train LSTM Autoencoder
+  python run.py step4 --num-epochs 30    # Custom number of epochs
   python run.py all                      # Run all available steps
         """
     )
     
     parser.add_argument(
         "step",
-        choices=["step1", "step2", "step3", "all", "info"],
-        help="Step to execute (step1, step2, step3, all, or info)"
+        choices=["step1", "step2", "step3", "step4", "all", "info"],
+        help="Step to execute (step1, step2, step3, step4, all, or info)"
     )
     
     # Step 1 arguments
@@ -114,6 +117,32 @@ Examples:
         help="Batch size for DataLoaders (Step 3)"
     )
     
+    # Step 4 arguments
+    parser.add_argument(
+        "--force-retrain",
+        action="store_true",
+        help="Force retraining even if model exists (Step 4)"
+    )
+    
+    parser.add_argument(
+        "--num-epochs",
+        type=int,
+        help="Number of training epochs (Step 4)"
+    )
+    
+    parser.add_argument(
+        "--learning-rate",
+        type=float,
+        help="Learning rate for training (Step 4)"
+    )
+    
+    parser.add_argument(
+        "--device",
+        type=str,
+        choices=["cuda", "mps", "cpu"],
+        help="Device to use for training (Step 4)"
+    )
+    
     args = parser.parse_args()
     
     # Print banner
@@ -153,11 +182,21 @@ Examples:
             )
             print()
         
+        if args.step == "step4" or args.step == "all":
+            print("\n🚀 Starting Step 4...\n")
+            run_step4(
+                force_retrain=args.force_retrain,
+                num_epochs=args.num_epochs,
+                learning_rate=args.learning_rate,
+                device=args.device
+            )
+            print()
+        
         if args.step == "all":
             print("\n" + "=" * 70)
             print("✅ All steps completed successfully!")
             print("=" * 70)
-            print("\nNext: Run Step 4 to train the unsupervised model")
+            print("\nNext: Run Step 5 to generate anomaly scores and evaluate")
             print()
     
     except KeyboardInterrupt:

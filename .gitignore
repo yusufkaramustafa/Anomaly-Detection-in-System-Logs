@@ -210,3 +210,8 @@ __marimo__/
 
 # Preprocessed data
 data/preprocessed/
+
+# Trained models
+models/
+*.pt
+*.pth

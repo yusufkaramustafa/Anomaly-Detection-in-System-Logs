@@ -52,3 +52,20 @@ RANDOM_SEED = 42
 # Vocabulary settings
 MIN_EVENT_FREQ = 1  # Minimum frequency for event to be in vocabulary
 
+# Model settings (Step 4)
+MODEL_SAVE_PATH = "models/lstm_autoencoder.pt"
+EMBEDDING_DIM = 128
+HIDDEN_DIM = 256
+NUM_LAYERS = 2
+LATENT_DIM = 128
+DROPOUT = 0.2
+
+# Training settings
+NUM_EPOCHS = 20
+LEARNING_RATE = 0.001
+CLIP_GRAD_NORM = 1.0
+EARLY_STOPPING_PATIENCE = 5
+
+# Anomaly detection settings
+ANOMALY_THRESHOLD_PERCENTILE = 95.0  # Top 5% are considered anomalies
+
