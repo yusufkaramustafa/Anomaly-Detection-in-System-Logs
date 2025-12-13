@@ -182,13 +182,38 @@ def load_trained_model(device: torch.device):
     print(f"  ✓ Best validation loss: {checkpoint['val_loss']:.4f}")
     
     # Evaluate
+    print("\n[4/4] Evaluating model on test set...")
     from src.anomaly_detector import evaluate_anomaly_detection
-    test_metrics, _, _ = evaluate_anomaly_detection(
+    test_metrics, anomaly_scores, anomaly_labels = evaluate_anomaly_detection(
         model=model,
         test_loader=test_loader,
         device=device,
         threshold_percentile=config.ANOMALY_THRESHOLD_PERCENTILE
     )
+    
+    # Save evaluation results
+    results_path = os.path.join(os.path.dirname(config.MODEL_SAVE_PATH), "evaluation_results.json")
+    os.makedirs(os.path.dirname(config.MODEL_SAVE_PATH), exist_ok=True)
+    with open(results_path, 'w') as f:
+        json.dump(test_metrics, f, indent=2)
+    print(f"  ✓ Saved evaluation results to {results_path}")
+    
+    # Display results
+    print("\n" + "=" * 70)
+    print("Anomaly Detection Evaluation")
+    print("=" * 70)
+    print(f"  • Test samples: {test_metrics['num_samples']:,}")
+    print(f"  • Detected anomalies: {test_metrics['num_anomalies']:,} ({test_metrics['anomaly_rate']:.2f}%)")
+    print(f"  • Normal sequences: {test_metrics['num_normal']:,}")
+    print(f"  • Threshold: {test_metrics['threshold']:.4f} ({test_metrics['threshold_percentile']}th percentile)")
+    print(f"\n  Anomaly Score Statistics:")
+    print(f"    - Mean: {test_metrics['mean_score']:.4f}")
+    print(f"    - Median: {test_metrics['median_score']:.4f}")
+    print(f"    - Std: {test_metrics['std_score']:.4f}")
+    print(f"    - Range: [{test_metrics['min_score']:.4f}, {test_metrics['max_score']:.4f}]")
+    print("=" * 70)
+    print("✓ Model evaluation completed!")
+    print("=" * 70)
     
     return model, checkpoint.get('history', {}), test_metrics
 
