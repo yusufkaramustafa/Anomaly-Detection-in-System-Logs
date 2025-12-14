@@ -215,3 +215,6 @@ data/preprocessed/
 models/
 *.pt
 *.pth
+
+# Visualization results
+results/

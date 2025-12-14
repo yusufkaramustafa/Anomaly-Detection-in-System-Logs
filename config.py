@@ -69,3 +69,6 @@ EARLY_STOPPING_PATIENCE = 5
 # Anomaly detection settings
 ANOMALY_THRESHOLD_PERCENTILE = 95.0  # Top 5% are considered anomalies
 
+# Visualization settings (Step 5)
+VISUALIZATION_OUTPUT_DIR = "results/visualizations"
+

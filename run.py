@@ -16,6 +16,7 @@ from steps.step1_parse_logs import run_step1
 from steps.step2_build_sequences import run_step2
 from steps.step3_preprocess import run_step3
 from steps.step4_train_model import run_step4
+from steps.step5_visualize import run_step5
 
 
 def print_banner():
@@ -35,8 +36,7 @@ def print_step_info():
     print("  Step 2: Build event sequences by block ID")
     print("  Step 3: Preprocess sequences for model training")
     print("  Step 4: Train LSTM Autoencoder for anomaly detection")
-    print("  Step 5: Generate anomaly scores and evaluate - Coming soon")
-    print("  Step 6: Visualize results - Coming soon")
+    print("  Step 5: Visualize anomaly detection results")
     print()
 
 
@@ -55,14 +55,16 @@ Examples:
   python run.py step3 --max-seq-length 50 # Custom sequence length
   python run.py step4                    # Train LSTM Autoencoder
   python run.py step4 --num-epochs 30    # Custom number of epochs
+  python run.py step5                    # Visualize results
+  python run.py step5 --top-k 100        # Analyze top 100 anomalies
   python run.py all                      # Run all available steps
         """
     )
     
     parser.add_argument(
         "step",
-        choices=["step1", "step2", "step3", "step4", "all", "info"],
-        help="Step to execute (step1, step2, step3, step4, all, or info)"
+        choices=["step1", "step2", "step3", "step4", "step5", "all", "info"],
+        help="Step to execute (step1, step2, step3, step4, step5, all, or info)"
     )
     
     # Step 1 arguments
@@ -143,6 +145,20 @@ Examples:
         help="Device to use for training (Step 4)"
     )
     
+    # Step 5 arguments
+    parser.add_argument(
+        "--force-recompute",
+        action="store_true",
+        help="Force recompute visualizations even if they exist (Step 5)"
+    )
+    
+    parser.add_argument(
+        "--top-k",
+        type=int,
+        default=50,
+        help="Number of top anomalies to analyze in detail (Step 5, default: 50)"
+    )
+    
     args = parser.parse_args()
     
     # Print banner
@@ -192,11 +208,18 @@ Examples:
             )
             print()
         
+        if args.step == "step5" or args.step == "all":
+            print("\n🚀 Starting Step 5...\n")
+            run_step5(
+                force_recompute=args.force_recompute,
+                top_k=args.top_k
+            )
+            print()
+        
         if args.step == "all":
             print("\n" + "=" * 70)
             print("✅ All steps completed successfully!")
             print("=" * 70)
-            print("\nNext: Run Step 5 to generate anomaly scores and evaluate")
             print()
     
     except KeyboardInterrupt:
