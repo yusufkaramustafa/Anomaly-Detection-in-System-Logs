@@ -13,8 +13,8 @@ import os
 import torch
 import numpy as np
 
-from steps.step3_preprocess import load_preprocessed_data
-from steps.step4_train_model import load_trained_model
+from steps.preprocess import load_preprocessed_data
+from steps.train_model import load_trained_model
 from src.visualization import (
     create_visualization_summary,
     analyze_top_anomalies,
@@ -41,7 +41,7 @@ def get_test_sequences():
     return test_sequences
 
 
-def run_step5(force_recompute: bool = False, top_k: int = 50):
+def run_visualize(force_recompute: bool = False, top_k: int = 50):
     """
     Execute Step 5: Visualize anomaly detection results.
     
@@ -158,4 +158,3 @@ def run_step5(force_recompute: bool = False, top_k: int = 50):
         'num_anomalies': int(anomaly_labels.sum()),
         'anomaly_rate': float(anomaly_labels.sum() / len(anomaly_labels) * 100)
     }
-

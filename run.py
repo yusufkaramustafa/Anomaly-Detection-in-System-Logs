@@ -12,11 +12,13 @@ import argparse
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from steps.step1_parse_logs import run_step1
-from steps.step2_build_sequences import run_step2
-from steps.step3_preprocess import run_step3
-from steps.step4_train_model import run_step4
-from steps.step5_visualize import run_step5
+from steps.parse_logs import run_parse_logs
+from steps.build_sequences import run_build_sequences
+from steps.preprocess import run_preprocess
+from steps.train_model import run_train_model
+from steps.visualize import run_visualize
+from src.performance import print_all_performance_reports, load_performance_report
+import config
 
 
 def print_banner():
@@ -63,8 +65,8 @@ Examples:
     
     parser.add_argument(
         "step",
-        choices=["step1", "step2", "step3", "step4", "step5", "all", "info"],
-        help="Step to execute (step1, step2, step3, step4, step5, all, or info)"
+        choices=["step1", "step2", "step3", "step4", "step5", "all", "info", "performance"],
+        help="Step to execute (step1, step2, step3, step4, step5, all, info, or performance)"
     )
     
     # Step 1 arguments
@@ -169,11 +171,16 @@ Examples:
         print_step_info()
         return
     
+    # Handle performance command
+    if args.step == "performance":
+        print_all_performance_reports(config.PERFORMANCE_OUTPUT_DIR)
+        return
+    
     # Execute steps
     try:
         if args.step == "step1" or args.step == "all":
             print("\n🚀 Starting Step 1...\n")
-            run_step1(
+            run_parse_logs(
                 force_reparse=args.force_parse,
                 log_path=args.log_path,
                 template_path=args.template_path
@@ -182,7 +189,7 @@ Examples:
         
         if args.step == "step2" or args.step == "all":
             print("\n🚀 Starting Step 2...\n")
-            run_step2(
+            run_build_sequences(
                 force_rebuild=args.force_rebuild,
                 min_sequence_length=args.min_length
             )
@@ -190,7 +197,7 @@ Examples:
         
         if args.step == "step3" or args.step == "all":
             print("\n🚀 Starting Step 3...\n")
-            run_step3(
+            run_preprocess(
                 force_reprocess=args.force_reprocess,
                 max_seq_length=args.max_seq_length,
                 min_seq_length=args.min_length,
@@ -200,7 +207,7 @@ Examples:
         
         if args.step == "step4" or args.step == "all":
             print("\n🚀 Starting Step 4...\n")
-            run_step4(
+            run_train_model(
                 force_retrain=args.force_retrain,
                 num_epochs=args.num_epochs,
                 learning_rate=args.learning_rate,
@@ -210,7 +217,7 @@ Examples:
         
         if args.step == "step5" or args.step == "all":
             print("\n🚀 Starting Step 5...\n")
-            run_step5(
+            run_visualize(
                 force_recompute=args.force_recompute,
                 top_k=args.top_k
             )
@@ -232,4 +239,3 @@ Examples:
 
 if __name__ == "__main__":
     main()
-

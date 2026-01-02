@@ -14,7 +14,7 @@ import torch
 import torch.nn as nn
 import json
 
-from steps.step3_preprocess import load_preprocessed_data
+from steps.preprocess import load_preprocessed_data
 from src.models.lstm_autoencoder import LSTMAutoencoder
 from src.training import train_model
 from src.anomaly_detector import evaluate_anomaly_detection
@@ -157,7 +157,7 @@ def load_trained_model(device: torch.device):
     Returns:
         Tuple of (model, history, test_metrics)
     """
-    from steps.step3_preprocess import load_preprocessed_data
+    from steps.preprocess import load_preprocessed_data
     
     # Load preprocessed data
     train_loader, val_loader, test_loader, tokenizer, metadata = load_preprocessed_data()
@@ -218,7 +218,7 @@ def load_trained_model(device: torch.device):
     return model, checkpoint.get('history', {}), test_metrics
 
 
-def run_step4(force_retrain=False, num_epochs=None, learning_rate=None, device=None):
+def run_train_model(force_retrain=False, num_epochs=None, learning_rate=None, device=None):
     """
     Execute Step 4: Train LSTM Autoencoder.
     
@@ -237,4 +237,3 @@ def run_step4(force_retrain=False, num_epochs=None, learning_rate=None, device=N
         learning_rate=learning_rate,
         device=device
     )
-
