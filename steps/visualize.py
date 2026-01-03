@@ -80,13 +80,36 @@ def run_visualize(force_recompute: bool = False, top_k: int = 50):
     # Step 1: Load model and data
     print("\n[1/6] Loading model and test data...")
     model, _, _ = load_trained_model(device)
-    _, _, test_loader, tokenizer, _ = load_preprocessed_data()
+    _, _, test_loader, tokenizer, _, block_ids, sequence_meta = load_preprocessed_data(
+        include_block_ids=True,
+        include_sequence_meta=True
+    )
     
     # Step 2: Compute anomaly scores
     print("\n[2/6] Computing anomaly scores...")
     from src.anomaly_detector import compute_anomaly_scores, detect_anomalies
     
     anomaly_scores = compute_anomaly_scores(model, test_loader, device)
+    
+    # Apply simple metadata-based filtering to dampen noisy short/degenerate sequences
+    filter_mask = None
+    if sequence_meta and sequence_meta.get("test"):
+        test_meta = sequence_meta["test"]
+        lengths = np.array(test_meta.get("length") or [])
+        uniques = np.array(test_meta.get("unique") or [])
+        spans = np.array(test_meta.get("span") or [])
+        
+        if lengths.size and uniques.size:
+            filter_mask = (lengths < config.EVAL_MIN_SEQ_LENGTH) | (
+                uniques < config.EVAL_MIN_UNIQUE_EVENTS
+            )
+            if spans.size and config.EVAL_MIN_TIME_SPAN_SECONDS > 0:
+                filter_mask |= spans < config.EVAL_MIN_TIME_SPAN_SECONDS
+            
+            if filter_mask.any():
+                anomaly_scores = anomaly_scores.copy()
+                anomaly_scores[filter_mask] = 0.0  # push filtered sequences toward normal
+    
     anomaly_labels, threshold = detect_anomalies(
         anomaly_scores,
         percentile=config.ANOMALY_THRESHOLD_PERCENTILE

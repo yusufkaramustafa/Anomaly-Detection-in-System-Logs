@@ -40,6 +40,8 @@ def load_sequences_from_spark(spark: SparkSession, input_path: str = None):
     block_ids = []
     timestamps = []
     sequence_lengths = []
+    unique_events = []
+    time_spans = []
     
     for row in rows:
         # Convert Spark array to Python list
@@ -55,8 +57,9 @@ def load_sequences_from_spark(spark: SparkSession, input_path: str = None):
                 timestamps.append(None)
             
             # Metadata
-            if "SequenceLength" in row:
-                sequence_lengths.append(row["SequenceLength"])
+            sequence_lengths.append(row["SequenceLength"] if "SequenceLength" in row else None)
+            unique_events.append(row["UniqueEvents"] if "UniqueEvents" in row else None)
+            time_spans.append(row["TimeSpanSeconds"] if "TimeSpanSeconds" in row else None)
     
     # Calculate statistics
     metadata = {
@@ -64,13 +67,18 @@ def load_sequences_from_spark(spark: SparkSession, input_path: str = None):
         "avg_length": sum(sequence_lengths) / len(sequence_lengths) if sequence_lengths else 0,
         "min_length": min(sequence_lengths) if sequence_lengths else 0,
         "max_length": max(sequence_lengths) if sequence_lengths else 0,
+        "avg_unique_events": sum(unique_events) / len(unique_events) if unique_events else 0,
+        "avg_time_span": sum(ts for ts in time_spans if ts is not None) / len(
+            [ts for ts in time_spans if ts is not None]
+        ) if time_spans else 0,
     }
     
     print(f"  ✓ Loaded {len(sequences):,} sequences")
     print(f"    - Average length: {metadata['avg_length']:.2f}")
     print(f"    - Length range: {metadata['min_length']} - {metadata['max_length']}")
+    print(f"    - Avg unique events: {metadata['avg_unique_events']:.2f}")
     
-    return sequences, block_ids, timestamps, metadata
+    return sequences, block_ids, timestamps, metadata, sequence_lengths, unique_events, time_spans
 
 
 def filter_sequences_by_length(
@@ -109,4 +117,3 @@ def filter_sequences_by_length(
     print(f"    (min_length={min_length}, max_length={max_length or 'None'})")
     
     return filtered_seq, filtered_ids, filtered_times
-

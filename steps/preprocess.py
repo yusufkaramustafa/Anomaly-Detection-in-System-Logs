@@ -71,7 +71,15 @@ def preprocess_sequences(
                 spark = create_spark_session()
             
             with tracker.track_substep("load_sequences_from_spark"):
-                sequences, block_ids, timestamps, metadata = load_sequences_from_spark(spark)
+                (
+                    sequences,
+                    block_ids,
+                    timestamps,
+                    metadata,
+                    sequence_lengths,
+                    unique_events,
+                    time_spans
+                ) = load_sequences_from_spark(spark)
                 tracker.record_data_size("loaded_sequences", row_count=len(sequences))
             
             # Step 2: Filter sequences by length
@@ -107,7 +115,16 @@ def preprocess_sequences(
                     test_ids,
                     train_ts,
                     val_ts,
-                    test_ts
+                    test_ts,
+                    train_len,
+                    val_len,
+                    test_len,
+                    train_unique,
+                    val_unique,
+                    test_unique,
+                    train_span,
+                    val_span,
+                    test_span,
                 ) = split_data(
                     encoded_sequences,
                     train_ratio=config.TRAIN_RATIO,
@@ -116,7 +133,10 @@ def preprocess_sequences(
                     shuffle=True,
                     random_seed=config.RANDOM_SEED,
                     block_ids=block_ids,
-                    timestamps=timestamps
+                    timestamps=timestamps,
+                    sequence_lengths=sequence_lengths,
+                    unique_events=unique_events,
+                    time_spans=time_spans,
                 )
                 
                 print(f"  ✓ Train: {len(train_seq):,} sequences")
@@ -181,7 +201,24 @@ def preprocess_sequences(
                         "train": train_ids,
                         "val": val_ids,
                         "test": test_ids
-                    }
+                    },
+                    sequence_meta_splits={
+                        "train": {
+                            "length": train_len,
+                            "unique": train_unique,
+                            "span": train_span,
+                        },
+                        "val": {
+                            "length": val_len,
+                            "unique": val_unique,
+                            "span": val_span,
+                        },
+                        "test": {
+                            "length": test_len,
+                            "unique": test_unique,
+                            "span": test_span,
+                        },
+                    },
                 )
                 tracker.record_file_size("preprocessed_data_directory", config.PREPROCESSED_DATA_PATH)
         
@@ -221,7 +258,8 @@ def save_preprocessed_data(
     val_data: np.ndarray,
     test_data: np.ndarray,
     metadata: dict,
-    block_id_splits: dict = None
+    block_id_splits: dict = None,
+    sequence_meta_splits: dict = None
 ):
     """
     Save preprocessed data and tokenizer to disk.
@@ -260,6 +298,21 @@ def save_preprocessed_data(
             ids_path = os.path.join(config.PREPROCESSED_DATA_PATH, f"{split_name}_block_ids.npy")
             np.save(ids_path, np.array(ids))
             print(f"  ✓ Saved {split_name} block IDs to {ids_path}")
+
+    # Save sequence metadata (optional)
+    if sequence_meta_splits:
+        for split_name, meta in sequence_meta_splits.items():
+            if not meta:
+                continue
+            for key, values in meta.items():
+                if values is None:
+                    continue
+                meta_path = os.path.join(
+                    config.PREPROCESSED_DATA_PATH,
+                    f"{split_name}_{key}.npy"
+                )
+                np.save(meta_path, np.array(values))
+                print(f"  ✓ Saved {split_name} {key} to {meta_path}")
     
     # Save metadata
     import json
@@ -269,7 +322,7 @@ def save_preprocessed_data(
     print(f"  ✓ Saved metadata to {metadata_path}")
 
 
-def load_preprocessed_data(include_block_ids: bool = False):
+def load_preprocessed_data(include_block_ids: bool = False, include_sequence_meta: bool = False):
     """
     Load preprocessed data from disk.
     
@@ -317,11 +370,27 @@ def load_preprocessed_data(include_block_ids: bool = False):
                 block_ids[split_name] = np.load(ids_path, allow_pickle=True).tolist()
             else:
                 block_ids[split_name] = None
+
+    sequence_meta = None
+    if include_sequence_meta:
+        sequence_meta = {}
+        for split_name in ["train", "val", "test"]:
+            meta = {}
+            for key in ["length", "unique", "span"]:
+                meta_path = os.path.join(config.PREPROCESSED_DATA_PATH, f"{split_name}_{key}.npy")
+                if os.path.exists(meta_path):
+                    meta[key] = np.load(meta_path, allow_pickle=True).tolist()
+                else:
+                    meta[key] = None
+            sequence_meta[split_name] = meta
     
+    outputs = [train_loader, val_loader, test_loader, tokenizer, metadata]
     if include_block_ids:
-        return train_loader, val_loader, test_loader, tokenizer, metadata, block_ids
+        outputs.append(block_ids)
+    if include_sequence_meta:
+        outputs.append(sequence_meta)
     
-    return train_loader, val_loader, test_loader, tokenizer, metadata
+    return tuple(outputs)
 
 
 def run_preprocess(force_reprocess=False, max_seq_length=None, min_seq_length=None, batch_size=None):

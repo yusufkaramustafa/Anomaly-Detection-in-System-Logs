@@ -68,6 +68,9 @@ EARLY_STOPPING_PATIENCE = 5
 
 # Anomaly detection settings
 ANOMALY_THRESHOLD_PERCENTILE = 95.0  # Top 5% are considered anomalies
+EVAL_MIN_SEQ_LENGTH = 2              # Filter out sequences shorter than this during eval
+EVAL_MIN_UNIQUE_EVENTS = 1           # Filter out sequences with too few unique events
+EVAL_MIN_TIME_SPAN_SECONDS = 0       # Filter out near-zero spans if desired (set >0 to enable)
 
 # Visualization settings (Step 5)
 VISUALIZATION_OUTPUT_DIR = "results/visualizations"

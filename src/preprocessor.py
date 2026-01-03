@@ -142,11 +142,17 @@ def split_data(
     shuffle: bool = True,
     random_seed: int = 42,
     block_ids: List[str] = None,
-    timestamps: List[List[str]] = None
+    timestamps: List[List[str]] = None,
+    sequence_lengths: List[int] = None,
+    unique_events: List[int] = None,
+    time_spans: List[float] = None
 ) -> Tuple[
     List[List[int]], List[List[int]], List[List[int]],
     List[str], List[str], List[str],
-    List[List[str]], List[List[str]], List[List[str]]
+    List[List[str]], List[List[str]], List[List[str]],
+    List[int], List[int], List[int],
+    List[int], List[int], List[int],
+    List[float], List[float], List[float]
 ]:
     """
     Split sequences into train/validation/test sets (unsupervised learning).
@@ -172,6 +178,12 @@ def split_data(
     
     if timestamps is not None and len(timestamps) != len(sequences):
         raise ValueError("timestamps must align with sequences")
+    if sequence_lengths is not None and len(sequence_lengths) != len(sequences):
+        raise ValueError("sequence_lengths must align with sequences")
+    if unique_events is not None and len(unique_events) != len(sequences):
+        raise ValueError("unique_events must align with sequences")
+    if time_spans is not None and len(time_spans) != len(sequences):
+        raise ValueError("time_spans must align with sequences")
     
     if shuffle:
         np.random.seed(random_seed)
@@ -181,6 +193,12 @@ def split_data(
             block_ids = [block_ids[i] for i in indices]
         if timestamps is not None:
             timestamps = [timestamps[i] for i in indices]
+        if sequence_lengths is not None:
+            sequence_lengths = [sequence_lengths[i] for i in indices]
+        if unique_events is not None:
+            unique_events = [unique_events[i] for i in indices]
+        if time_spans is not None:
+            time_spans = [time_spans[i] for i in indices]
     
     n = len(sequences)
     n_train = int(n * train_ratio)
@@ -203,11 +221,35 @@ def split_data(
         test_ts = timestamps[n_train + n_val:]
     else:
         train_ts = val_ts = test_ts = None
-    
+
+    if sequence_lengths is not None:
+        train_len = sequence_lengths[:n_train]
+        val_len = sequence_lengths[n_train:n_train + n_val]
+        test_len = sequence_lengths[n_train + n_val:]
+    else:
+        train_len = val_len = test_len = None
+
+    if unique_events is not None:
+        train_unique = unique_events[:n_train]
+        val_unique = unique_events[n_train:n_train + n_val]
+        test_unique = unique_events[n_train + n_val:]
+    else:
+        train_unique = val_unique = test_unique = None
+
+    if time_spans is not None:
+        train_span = time_spans[:n_train]
+        val_span = time_spans[n_train:n_train + n_val]
+        test_span = time_spans[n_train + n_val:]
+    else:
+        train_span = val_span = test_span = None
+
     return (
         train_seq, val_seq, test_seq,
         train_ids, val_ids, test_ids,
-        train_ts, val_ts, test_ts
+        train_ts, val_ts, test_ts,
+        train_len, val_len, test_len,
+        train_unique, val_unique, test_unique,
+        train_span, val_span, test_span
     )
 
 

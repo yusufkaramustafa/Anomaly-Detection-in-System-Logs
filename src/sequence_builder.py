@@ -5,7 +5,8 @@ Uses optimized Spark operations for maximum performance.
 
 from pyspark.sql.functions import (
     col, collect_list, array_sort, struct, expr,
-    row_number, window, count as spark_count
+    row_number, window, count as spark_count,
+    size, array_distinct, array_min, array_max
 )
 from pyspark.sql.window import Window
 import config
@@ -128,12 +129,28 @@ def add_sequence_metadata(df_sequences):
     Returns:
         DataFrame with additional metadata columns
     """
-    from pyspark.sql.functions import size, array_distinct
-    
-    return df_sequences.withColumn(
-        "SequenceLength", size(col("EventSequence"))
-    ).withColumn(
-        "UniqueEvents", size(array_distinct(col("EventSequence")))
+    return (
+        df_sequences
+        .withColumn("SequenceLength", size(col("EventSequence")))
+        .withColumn("UniqueEvents", size(array_distinct(col("EventSequence"))))
+        .withColumn(
+            "TimeSpanSeconds",
+            expr(
+                "CASE WHEN size(Timestamps) > 0 "
+                "THEN unix_timestamp(array_max(Timestamps)) - unix_timestamp(array_min(Timestamps)) "
+                "ELSE 0 END"
+            )
+        )
+        .withColumn(
+            "FirstEvent",
+            expr("CASE WHEN size(EventSequence) > 0 THEN EventSequence[0] ELSE null END")
+        )
+        .withColumn(
+            "LastEvent",
+            expr(
+                "CASE WHEN size(EventSequence) > 0 THEN EventSequence[size(EventSequence)-1] ELSE null END"
+            )
+        )
     )
 
 
@@ -155,4 +172,3 @@ def filter_sequences_by_length(df_sequences, min_length=1, max_length=None):
         df_filtered = df_filtered.filter(col("SequenceLength") <= max_length)
     
     return df_filtered
-
