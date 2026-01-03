@@ -72,6 +72,11 @@ ANOMALY_THRESHOLD_PERCENTILE = 95.0  # Top 5% are considered anomalies
 # Visualization settings (Step 5)
 VISUALIZATION_OUTPUT_DIR = "results/visualizations"
 
+# Ground-truth labels (optional, for evaluation)
+LABEL_PATH = "data/labeled_data/anomaly_label.csv"
+
 # Performance tracking settings
 PERFORMANCE_OUTPUT_DIR = "results/performance"
 
+# Evaluation output settings
+EVALUATION_OUTPUT_DIR = "results/evaluation"

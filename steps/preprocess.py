@@ -98,13 +98,25 @@ def preprocess_sequences(
             # Step 4: Split data
             print("\n[4/6] Splitting data into train/val/test sets...")
             with tracker.track_substep("split_data"):
-                train_seq, val_seq, test_seq = split_data(
+                (
+                    train_seq,
+                    val_seq,
+                    test_seq,
+                    train_ids,
+                    val_ids,
+                    test_ids,
+                    train_ts,
+                    val_ts,
+                    test_ts
+                ) = split_data(
                     encoded_sequences,
                     train_ratio=config.TRAIN_RATIO,
                     val_ratio=config.VAL_RATIO,
                     test_ratio=config.TEST_RATIO,
                     shuffle=True,
-                    random_seed=config.RANDOM_SEED
+                    random_seed=config.RANDOM_SEED,
+                    block_ids=block_ids,
+                    timestamps=timestamps
                 )
                 
                 print(f"  ✓ Train: {len(train_seq):,} sequences")
@@ -164,7 +176,12 @@ def preprocess_sequences(
                     train_padded,
                     val_padded,
                     test_padded,
-                    metadata
+                    metadata,
+                    block_id_splits={
+                        "train": train_ids,
+                        "val": val_ids,
+                        "test": test_ids
+                    }
                 )
                 tracker.record_file_size("preprocessed_data_directory", config.PREPROCESSED_DATA_PATH)
         
@@ -203,7 +220,8 @@ def save_preprocessed_data(
     train_data: np.ndarray,
     val_data: np.ndarray,
     test_data: np.ndarray,
-    metadata: dict
+    metadata: dict,
+    block_id_splits: dict = None
 ):
     """
     Save preprocessed data and tokenizer to disk.
@@ -234,6 +252,15 @@ def save_preprocessed_data(
     
     print(f"  ✓ Saved data arrays to {config.PREPROCESSED_DATA_PATH}/")
     
+    # Save block IDs (optional)
+    if block_id_splits:
+        for split_name, ids in block_id_splits.items():
+            if ids is None:
+                continue
+            ids_path = os.path.join(config.PREPROCESSED_DATA_PATH, f"{split_name}_block_ids.npy")
+            np.save(ids_path, np.array(ids))
+            print(f"  ✓ Saved {split_name} block IDs to {ids_path}")
+    
     # Save metadata
     import json
     metadata_path = os.path.join(config.PREPROCESSED_DATA_PATH, "metadata.json")
@@ -242,12 +269,12 @@ def save_preprocessed_data(
     print(f"  ✓ Saved metadata to {metadata_path}")
 
 
-def load_preprocessed_data():
+def load_preprocessed_data(include_block_ids: bool = False):
     """
     Load preprocessed data from disk.
     
     Returns:
-        Tuple of (train_loader, val_loader, test_loader, tokenizer, metadata)
+        Tuple of (train_loader, val_loader, test_loader, tokenizer, metadata[, block_ids])
     """
     import json
     
@@ -280,6 +307,19 @@ def load_preprocessed_data():
     )
     
     print(f"  ✓ Created DataLoaders")
+    
+    block_ids = None
+    if include_block_ids:
+        block_ids = {}
+        for split_name in ["train", "val", "test"]:
+            ids_path = os.path.join(config.PREPROCESSED_DATA_PATH, f"{split_name}_block_ids.npy")
+            if os.path.exists(ids_path):
+                block_ids[split_name] = np.load(ids_path, allow_pickle=True).tolist()
+            else:
+                block_ids[split_name] = None
+    
+    if include_block_ids:
+        return train_loader, val_loader, test_loader, tokenizer, metadata, block_ids
     
     return train_loader, val_loader, test_loader, tokenizer, metadata
 

@@ -9,12 +9,14 @@ This step:
 5. Exports results to CSV
 """
 
+import json
 import os
 import torch
 import numpy as np
 
 from steps.preprocess import load_preprocessed_data
 from steps.train_model import load_trained_model
+from src.evaluation import evaluate_with_labels
 from src.visualization import (
     create_visualization_summary,
     analyze_top_anomalies,
@@ -76,12 +78,12 @@ def run_visualize(force_recompute: bool = False, top_k: int = 50):
     print(f"\nUsing device: {device}")
     
     # Step 1: Load model and data
-    print("\n[1/5] Loading model and test data...")
+    print("\n[1/6] Loading model and test data...")
     model, _, _ = load_trained_model(device)
     _, _, test_loader, tokenizer, _ = load_preprocessed_data()
     
     # Step 2: Compute anomaly scores
-    print("\n[2/5] Computing anomaly scores...")
+    print("\n[2/6] Computing anomaly scores...")
     from src.anomaly_detector import compute_anomaly_scores, detect_anomalies
     
     anomaly_scores = compute_anomaly_scores(model, test_loader, device)
@@ -94,12 +96,12 @@ def run_visualize(force_recompute: bool = False, top_k: int = 50):
     print(f"  ✓ Detected {anomaly_labels.sum():,} anomalies ({anomaly_labels.sum() / len(anomaly_labels) * 100:.2f}%)")
     
     # Step 3: Load test sequences for analysis
-    print("\n[3/5] Loading test sequences for analysis...")
+    print("\n[3/6] Loading test sequences for analysis...")
     test_sequences = get_test_sequences()
     print(f"  ✓ Loaded {len(test_sequences):,} test sequences")
     
     # Step 4: Create visualizations
-    print("\n[4/5] Creating visualizations...")
+    print("\n[4/6] Creating visualizations...")
     os.makedirs(viz_dir, exist_ok=True)
     
     create_visualization_summary(
@@ -109,8 +111,44 @@ def run_visualize(force_recompute: bool = False, top_k: int = 50):
         output_dir=viz_dir
     )
     
-    # Step 5: Analyze top anomalies
-    print(f"\n[5/5] Analyzing top {top_k} anomalies...")
+    # Optional: Ground-truth evaluation if labels + block IDs are available
+    evaluation_metrics = None
+    test_block_ids = None
+    test_block_ids_path = os.path.join(config.PREPROCESSED_DATA_PATH, "test_block_ids.npy")
+    if os.path.exists(test_block_ids_path):
+        test_block_ids = np.load(test_block_ids_path, allow_pickle=True).tolist()
+    
+    if test_block_ids is not None and len(test_block_ids) == len(anomaly_scores):
+        try:
+            print("\n[5/5] Evaluating against ground-truth labels...")
+            evaluation_metrics = evaluate_with_labels(
+                test_block_ids,
+                anomaly_scores,
+                anomaly_labels,
+                label_path=config.LABEL_PATH
+            )
+            
+            os.makedirs(config.EVALUATION_OUTPUT_DIR, exist_ok=True)
+            eval_path = os.path.join(config.EVALUATION_OUTPUT_DIR, "ground_truth_eval.json")
+            with open(eval_path, "w") as f:
+                json.dump(evaluation_metrics, f, indent=2)
+            
+            print(f"  ✓ Saved evaluation metrics to {eval_path}")
+            print("  Evaluation:")
+            print(f"    - Precision: {evaluation_metrics['precision']:.4f}")
+            print(f"    - Recall:    {evaluation_metrics['recall']:.4f}")
+            print(f"    - F1:        {evaluation_metrics['f1']:.4f}")
+            print(f"    - Accuracy:  {evaluation_metrics['accuracy']:.4f}")
+            print(f"    - Coverage:  {evaluation_metrics['coverage_rate']*100:.1f}% of test IDs matched labels")
+        except Exception as eval_err:
+            print(f"  ⚠️  Ground-truth evaluation skipped: {eval_err}")
+    elif test_block_ids is None:
+        print("\n[5/5] Skipping ground-truth evaluation (test_block_ids not saved)")
+    else:
+        print("\n[5/5] Skipping ground-truth evaluation (ID/score length mismatch)")
+    
+    # Step 6: Analyze top anomalies
+    print(f"\n[6/6] Analyzing top {top_k} anomalies...")
     
     top_anomalies_path = os.path.join(viz_dir, f"top_{top_k}_anomalies.csv")
     top_anomalies_df = analyze_top_anomalies(
@@ -156,5 +194,6 @@ def run_visualize(force_recompute: bool = False, top_k: int = 50):
         'top_anomalies_path': top_anomalies_path,
         'export_path': export_path,
         'num_anomalies': int(anomaly_labels.sum()),
-        'anomaly_rate': float(anomaly_labels.sum() / len(anomaly_labels) * 100)
+        'anomaly_rate': float(anomaly_labels.sum() / len(anomaly_labels) * 100),
+        'evaluation_metrics': evaluation_metrics
     }

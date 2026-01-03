@@ -140,8 +140,14 @@ def split_data(
     val_ratio: float = 0.15,
     test_ratio: float = 0.15,
     shuffle: bool = True,
-    random_seed: int = 42
-) -> Tuple[List[List[int]], List[List[int]], List[List[int]]]:
+    random_seed: int = 42,
+    block_ids: List[str] = None,
+    timestamps: List[List[str]] = None
+) -> Tuple[
+    List[List[int]], List[List[int]], List[List[int]],
+    List[str], List[str], List[str],
+    List[List[str]], List[List[str]], List[List[str]]
+]:
     """
     Split sequences into train/validation/test sets (unsupervised learning).
     
@@ -154,15 +160,27 @@ def split_data(
         random_seed: Random seed for reproducibility
     
     Returns:
-        Tuple of (train_sequences, val_sequences, test_sequences)
+        Tuple of (train_sequences, val_sequences, test_sequences,
+                  train_block_ids, val_block_ids, test_block_ids,
+                  train_timestamps, val_timestamps, test_timestamps)
     """
     assert abs(train_ratio + val_ratio + test_ratio - 1.0) < 1e-6, \
         "Ratios must sum to 1.0"
+    
+    if block_ids is not None and len(block_ids) != len(sequences):
+        raise ValueError("block_ids must align with sequences")
+    
+    if timestamps is not None and len(timestamps) != len(sequences):
+        raise ValueError("timestamps must align with sequences")
     
     if shuffle:
         np.random.seed(random_seed)
         indices = np.random.permutation(len(sequences))
         sequences = [sequences[i] for i in indices]
+        if block_ids is not None:
+            block_ids = [block_ids[i] for i in indices]
+        if timestamps is not None:
+            timestamps = [timestamps[i] for i in indices]
     
     n = len(sequences)
     n_train = int(n * train_ratio)
@@ -172,7 +190,25 @@ def split_data(
     val_seq = sequences[n_train:n_train + n_val]
     test_seq = sequences[n_train + n_val:]
     
-    return train_seq, val_seq, test_seq
+    if block_ids is not None:
+        train_ids = block_ids[:n_train]
+        val_ids = block_ids[n_train:n_train + n_val]
+        test_ids = block_ids[n_train + n_val:]
+    else:
+        train_ids = val_ids = test_ids = None
+    
+    if timestamps is not None:
+        train_ts = timestamps[:n_train]
+        val_ts = timestamps[n_train:n_train + n_val]
+        test_ts = timestamps[n_train + n_val:]
+    else:
+        train_ts = val_ts = test_ts = None
+    
+    return (
+        train_seq, val_seq, test_seq,
+        train_ids, val_ids, test_ids,
+        train_ts, val_ts, test_ts
+    )
 
 
 class SequenceDataset(Dataset):
@@ -244,4 +280,3 @@ def create_dataloaders(
     )
     
     return train_loader, val_loader, test_loader
-
