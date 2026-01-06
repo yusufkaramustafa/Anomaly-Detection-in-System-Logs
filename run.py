@@ -18,6 +18,7 @@ from steps.preprocess import run_preprocess
 from steps.train_model import run_train_model
 from steps.visualize import run_visualize
 from src.performance import print_all_performance_reports, load_performance_report
+from scripts.benchmark_scalability import run_benchmark
 import config
 
 
@@ -39,6 +40,7 @@ def print_step_info():
     print("  Step 3: Preprocess sequences for model training")
     print("  Step 4: Train LSTM Autoencoder for anomaly detection")
     print("  Step 5: Visualize anomaly detection results")
+    print("  Benchmark: Compare Spark vs pandas sequence building performance")
     print()
 
 
@@ -65,8 +67,8 @@ Examples:
     
     parser.add_argument(
         "step",
-        choices=["step1", "step2", "step3", "step4", "step5", "all", "info", "performance"],
-        help="Step to execute (step1, step2, step3, step4, step5, all, info, or performance)"
+        choices=["step1", "step2", "step3", "step4", "step5", "all", "info", "performance", "benchmark"],
+        help="Step to execute (step1-5, all, info, performance, or benchmark)"
     )
     
     # Step 1 arguments
@@ -160,6 +162,15 @@ Examples:
         default=50,
         help="Number of top anomalies to analyze in detail (Step 5, default: 50)"
     )
+
+    # Benchmark arguments
+    parser.add_argument(
+        "--benchmark-mode",
+        type=str,
+        choices=["both", "spark", "pandas"],
+        default="both",
+        help="Benchmark mode (Spark vs pandas). Only used with step=benchmark."
+    )
     
     args = parser.parse_args()
     
@@ -174,6 +185,14 @@ Examples:
     # Handle performance command
     if args.step == "performance":
         print_all_performance_reports(config.PERFORMANCE_OUTPUT_DIR)
+        return
+    
+    # Handle benchmark command
+    if args.step == "benchmark":
+        run_spark = args.benchmark_mode in ["both", "spark"]
+        run_pandas = args.benchmark_mode in ["both", "pandas"]
+        print("\n🚀 Running scalability benchmark...\n")
+        run_benchmark(run_spark=run_spark, run_pandas=run_pandas)
         return
     
     # Execute steps
