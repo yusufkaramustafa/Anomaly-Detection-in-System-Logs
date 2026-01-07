@@ -68,6 +68,49 @@ def compute_anomaly_scores(
     return np.array(anomaly_scores)
 
 
+def compute_token_losses(
+    model: torch.nn.Module,
+    sequences: np.ndarray,
+    device: torch.device,
+    batch_size: int = 64
+) -> np.ndarray:
+    """
+    Compute per-token reconstruction loss for sequences.
+    
+    Args:
+        model: Trained LSTM Autoencoder
+        sequences: Numpy array of shape (num_sequences, seq_length)
+        device: Device to run on
+        batch_size: Batch size for processing
+    
+    Returns:
+        Array of per-token losses with shape (num_sequences, seq_length)
+    """
+    model.eval()
+    all_losses = []
+    
+    with torch.no_grad():
+        for i in range(0, len(sequences), batch_size):
+            batch = torch.LongTensor(sequences[i:i + batch_size]).to(device)
+            logits, _ = model(batch)
+            
+            batch_size_local, seq_length, vocab_size = logits.shape
+            logits_flat = logits.view(-1, vocab_size)
+            targets_flat = batch.view(-1)
+            
+            loss = torch.nn.functional.cross_entropy(
+                logits_flat,
+                targets_flat,
+                ignore_index=0,
+                reduction='none'
+            )
+            
+            loss = loss.view(batch_size_local, seq_length)
+            all_losses.append(loss.cpu().numpy())
+    
+    return np.concatenate(all_losses, axis=0)
+
+
 def detect_anomalies(
     anomaly_scores: np.ndarray,
     threshold: float = None,
@@ -141,4 +184,3 @@ def evaluate_anomaly_detection(
     }
     
     return metrics, anomaly_scores, anomaly_labels
-

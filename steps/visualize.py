@@ -16,11 +16,17 @@ import numpy as np
 
 from steps.preprocess import load_preprocessed_data
 from steps.train_model import load_trained_model
-from src.evaluation import evaluate_with_labels
+from src.evaluation import evaluate_with_labels, get_aligned_labels, sweep_thresholds, load_ground_truth_labels
 from src.visualization import (
     create_visualization_summary,
     analyze_top_anomalies,
-    export_anomaly_results
+    export_anomaly_results,
+    plot_score_by_class,
+    plot_threshold_sweep,
+    decode_sequence,
+    plot_sequence_length_distribution,
+    plot_dashboard,
+    export_false_predictions
 )
 import config
 
@@ -79,7 +85,7 @@ def run_visualize(force_recompute: bool = False, top_k: int = 50):
     
     # Step 1: Load model and data
     print("\n[1/6] Loading model and test data...")
-    model, _, _ = load_trained_model(device)
+    model, history, _ = load_trained_model(device)
     _, _, test_loader, tokenizer, _, block_ids, sequence_meta = load_preprocessed_data(
         include_block_ids=True,
         include_sequence_meta=True
@@ -133,6 +139,18 @@ def run_visualize(force_recompute: bool = False, top_k: int = 50):
         threshold=threshold,
         output_dir=viz_dir
     )
+
+    # Sequence length distribution (if available)
+    if sequence_meta and sequence_meta.get("test", {}).get("length"):
+        length_path = os.path.join(viz_dir, "sequence_length_distribution.png")
+        plot_sequence_length_distribution(sequence_meta["test"]["length"], length_path)
+
+    # Dashboard
+    dashboard_path = os.path.join(viz_dir, "summary_dashboard.png")
+    seq_lengths = None
+    if sequence_meta and sequence_meta.get("test", {}).get("length"):
+        seq_lengths = sequence_meta["test"]["length"]
+    plot_dashboard(anomaly_scores, anomaly_labels, seq_lengths, history, dashboard_path)
     
     # Optional: Ground-truth evaluation if labels + block IDs are available
     evaluation_metrics = None
@@ -169,17 +187,48 @@ def run_visualize(force_recompute: bool = False, top_k: int = 50):
         print("\n[5/5] Skipping ground-truth evaluation (test_block_ids not saved)")
     else:
         print("\n[5/5] Skipping ground-truth evaluation (ID/score length mismatch)")
+
+    # Additional labeled-data visualizations
+    if test_block_ids is not None and len(test_block_ids) == len(anomaly_scores):
+        try:
+            y_true, aligned_scores = get_aligned_labels(
+                test_block_ids,
+                anomaly_scores,
+                label_path=config.LABEL_PATH
+            )
+            class_path = os.path.join(viz_dir, "score_by_class.png")
+            plot_score_by_class(aligned_scores, y_true, class_path)
+            
+            sweep = sweep_thresholds(y_true, aligned_scores)
+            sweep_path = os.path.join(viz_dir, "threshold_sweep.png")
+            plot_threshold_sweep(sweep, sweep_path)
+
+            # False prediction details
+            y_pred = (aligned_scores > threshold).astype(int)
+            false_path = os.path.join(viz_dir, "false_predictions.csv")
+            export_false_predictions(y_true, y_pred, aligned_scores, false_path)
+        except Exception as viz_err:
+            print(f"  ⚠️  Labeled-data plots skipped: {viz_err}")
     
     # Step 6: Analyze top anomalies
     print(f"\n[6/6] Analyzing top {top_k} anomalies...")
     
     top_anomalies_path = os.path.join(viz_dir, f"top_{top_k}_anomalies.csv")
+    label_map = None
+    if test_block_ids:
+        try:
+            label_map = load_ground_truth_labels(config.LABEL_PATH)
+        except Exception:
+            label_map = None
+
     top_anomalies_df = analyze_top_anomalies(
         anomaly_scores=anomaly_scores,
         test_sequences=test_sequences,
         tokenizer=tokenizer,
         top_k=top_k,
-        output_path=top_anomalies_path
+        output_path=top_anomalies_path,
+        block_ids=test_block_ids,
+        label_map=label_map
     )
     
     # Display top 10 anomalies

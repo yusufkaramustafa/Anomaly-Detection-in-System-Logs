@@ -94,6 +94,82 @@ def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
     }
 
 
+def sweep_thresholds(
+    y_true: np.ndarray,
+    scores: np.ndarray,
+    percentiles: List[float] = None
+) -> Dict[str, List[float]]:
+    """
+    Sweep thresholds over score percentiles and compute metrics.
+    
+    Args:
+        y_true: Ground-truth labels (0/1)
+        scores: Anomaly scores aligned with y_true
+        percentiles: Optional list of percentiles to evaluate
+    
+    Returns:
+        Dict with percentiles, thresholds, precision, recall, f1, accuracy
+    """
+    if percentiles is None:
+        percentiles = list(range(80, 100))
+    
+    thresholds = [float(np.percentile(scores, p)) for p in percentiles]
+    precision = []
+    recall = []
+    f1 = []
+    accuracy = []
+    
+    for thr in thresholds:
+        y_pred = (scores > thr).astype(int)
+        metrics = compute_metrics(y_true, y_pred)
+        precision.append(metrics["precision"])
+        recall.append(metrics["recall"])
+        f1.append(metrics["f1"])
+        accuracy.append(metrics["accuracy"])
+    
+    return {
+        "percentiles": percentiles,
+        "thresholds": thresholds,
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+        "accuracy": accuracy,
+    }
+
+
+def get_aligned_labels(
+    block_ids: List[str],
+    anomaly_scores: np.ndarray,
+    label_path: str = None,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Align ground-truth labels with provided block IDs and scores.
+    
+    Args:
+        block_ids: BlockId list aligned with anomaly_scores
+        anomaly_scores: Array of anomaly scores
+        label_path: Optional override for label CSV path
+    
+    Returns:
+        Tuple of (y_true, scores_aligned) for matched block IDs
+    """
+    labels = load_ground_truth_labels(label_path)
+    
+    aligned_true = []
+    aligned_scores = []
+    
+    for bid, score in zip(block_ids, anomaly_scores):
+        norm_bid = _normalize_block_id(bid)
+        if norm_bid in labels:
+            aligned_true.append(labels[norm_bid])
+            aligned_scores.append(float(score))
+    
+    if not aligned_true:
+        raise ValueError("No block IDs matched the provided labels; cannot align labels.")
+    
+    return np.array(aligned_true), np.array(aligned_scores)
+
+
 def evaluate_with_labels(
     block_ids: List[str],
     anomaly_scores: np.ndarray,
