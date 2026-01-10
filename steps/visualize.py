@@ -152,7 +152,7 @@ def run_visualize(force_recompute: bool = False, top_k: int = 50):
         seq_lengths = sequence_meta["test"]["length"]
     plot_dashboard(anomaly_scores, anomaly_labels, seq_lengths, history, dashboard_path)
     
-    # Optional: Ground-truth evaluation if labels + block IDs are available
+    # Optional: Ground-truth evaluation
     evaluation_metrics = None
     test_block_ids = None
     test_block_ids_path = os.path.join(config.PREPROCESSED_DATA_PATH, "test_block_ids.npy")
@@ -182,7 +182,7 @@ def run_visualize(force_recompute: bool = False, top_k: int = 50):
             print(f"    - Accuracy:  {evaluation_metrics['accuracy']:.4f}")
             print(f"    - Coverage:  {evaluation_metrics['coverage_rate']*100:.1f}% of test IDs matched labels")
         except Exception as eval_err:
-            print(f"  ⚠️  Ground-truth evaluation skipped: {eval_err}")
+            print(f"   Ground-truth evaluation skipped: {eval_err}")
     elif test_block_ids is None:
         print("\n[5/5] Skipping ground-truth evaluation (test_block_ids not saved)")
     else:
@@ -208,7 +208,7 @@ def run_visualize(force_recompute: bool = False, top_k: int = 50):
             false_path = os.path.join(viz_dir, "false_predictions.csv")
             export_false_predictions(y_true, y_pred, aligned_scores, false_path)
         except Exception as viz_err:
-            print(f"  ⚠️  Labeled-data plots skipped: {viz_err}")
+            print(f"   Labeled-data plots skipped: {viz_err}")
     
     # Step 6: Analyze top anomalies
     print(f"\n[6/6] Analyzing top {top_k} anomalies...")

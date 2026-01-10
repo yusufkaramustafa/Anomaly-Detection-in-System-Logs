@@ -295,23 +295,23 @@ class PerformanceTracker:
         print("=" * 70)
         
         total_duration = self.get_total_duration()
-        print(f"\n⏱️  Total Duration: {format_duration(total_duration)}")
+        print(f"\n  Total Duration: {format_duration(total_duration)}")
         
         if self.resource_stats:
-            print(f"\n💻 Resource Usage:")
+            print(f"\n Resource Usage:")
             print(f"  • CPU: Avg {self.resource_stats['cpu_avg']:.1f}%, Max {self.resource_stats['cpu_max']:.1f}%")
             print(f"  • Memory: Avg {self.resource_stats['memory_avg_mb']:.1f} MB, "
                   f"Max {self.resource_stats['memory_max_mb']:.1f} MB, "
                   f"Min {self.resource_stats['memory_min_mb']:.1f} MB")
         
         if self.substeps:
-            print(f"\n📋 Substeps ({len(self.substeps)}):")
+            print(f"\n Substeps ({len(self.substeps)}):")
             for substep in self.substeps:
                 pct = (substep['duration_seconds'] / total_duration * 100) if total_duration > 0 else 0
                 print(f"  • {substep['name']}: {substep['duration_formatted']} ({pct:.1f}%)")
         
         if self.data_sizes:
-            print(f"\n📊 Data Sizes:")
+            print(f"\n Data Sizes:")
             for name, info in self.data_sizes.items():
                 parts = []
                 if 'row_count_formatted' in info:

@@ -82,7 +82,7 @@ def run_build_sequences(force_rebuild=False, min_sequence_length=1):
             print("Sequence Building Results")
             print("=" * 70)
             
-            print("\n📊 Sample Event Sequences:")
+            print("\n Sample Event Sequences:")
             df_sequences.select(
                 "BlockId", 
                 "SequenceLength", 
@@ -122,7 +122,7 @@ def run_build_sequences(force_rebuild=False, min_sequence_length=1):
             print("─" * 70)
             
             # Sequence length distribution
-            print("\n📈 Sequence Length Distribution:")
+            print("\n Sequence Length Distribution:")
             df_sequences.groupBy("SequenceLength") \
                 .count() \
                 .orderBy("SequenceLength") \
@@ -131,7 +131,7 @@ def run_build_sequences(force_rebuild=False, min_sequence_length=1):
             print("\n" + "=" * 70)
             print("✓ Step 2 completed successfully!")
             print("=" * 70)
-            print(f"\n💾 Sequences saved to: {config.SEQUENCES_PATH}")
+            print(f"\n Sequences saved to: {config.SEQUENCES_PATH}")
             print("   Ready for Step 3: Model Training")
             
             # Print performance summary
@@ -140,7 +140,7 @@ def run_build_sequences(force_rebuild=False, min_sequence_length=1):
             return df_sequences
             
         except Exception as e:
-            print(f"\n❌ Error in Step 2: {str(e)}")
+            print(f"\n Error in Step 2: {str(e)}")
             import traceback
             traceback.print_exc()
             raise

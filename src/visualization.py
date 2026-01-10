@@ -68,7 +68,7 @@ def plot_anomaly_score_distribution(
             plt.ylabel('Frequency (Log Scale)', fontsize=11)
     
     plt.tight_layout()
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.savefig(output_path, dpi=300, bbox_inches='tight', transparent=True)
     plt.close()
     
     print(f"  ✓ Saved score distribution plot to {output_path}")
@@ -190,7 +190,7 @@ def plot_threshold_sweep(
     plt.ylim(0, 1.05)
     
     plt.tight_layout()
-    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.savefig(output_path, dpi=300, bbox_inches="tight", transparent=True)
     plt.close()
     
     print(f"  ✓ Saved threshold sweep plot to {output_path}")

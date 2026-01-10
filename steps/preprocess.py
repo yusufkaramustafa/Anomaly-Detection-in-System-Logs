@@ -139,9 +139,9 @@ def preprocess_sequences(
                     time_spans=time_spans,
                 )
                 
-                print(f"  ✓ Train: {len(train_seq):,} sequences")
-                print(f"  ✓ Validation: {len(val_seq):,} sequences")
-                print(f"  ✓ Test: {len(test_seq):,} sequences")
+                print(f"Train: {len(train_seq):,} sequences")
+                print(f"Validation: {len(val_seq):,} sequences")
+                print(f"Test: {len(test_seq):,} sequences")
                 
                 tracker.record_data_size("train_sequences", row_count=len(train_seq))
                 tracker.record_data_size("val_sequences", row_count=len(val_seq))
@@ -169,9 +169,9 @@ def preprocess_sequences(
                     truncate=True
                 )
                 
-                print(f"  ✓ Train shape: {train_padded.shape}")
-                print(f"  ✓ Validation shape: {val_padded.shape}")
-                print(f"  ✓ Test shape: {test_padded.shape}")
+                print(f"Train shape: {train_padded.shape}")
+                print(f"Validation shape: {val_padded.shape}")
+                print(f"Test shape: {test_padded.shape}")
             
             # Step 6: Create DataLoaders
             print("\n[6/6] Creating PyTorch DataLoaders...")
@@ -184,12 +184,12 @@ def preprocess_sequences(
                     shuffle_train=True
                 )
                 
-                print(f"  ✓ Train batches: {len(train_loader)}")
-                print(f"  ✓ Validation batches: {len(val_loader)}")
-                print(f"  ✓ Test batches: {len(test_loader)}")
+                print(f"Train batches: {len(train_loader)}")
+                print(f"Validation batches: {len(val_loader)}")
+                print(f"Test batches: {len(test_loader)}")
             
             # Save preprocessed data
-            print("\n💾 Saving preprocessed data...")
+            print("\nSaving preprocessed data...")
             with tracker.track_substep("save_preprocessed_data"):
                 save_preprocessed_data(
                     tokenizer,
@@ -312,14 +312,14 @@ def save_preprocessed_data(
                     f"{split_name}_{key}.npy"
                 )
                 np.save(meta_path, np.array(values))
-                print(f"  ✓ Saved {split_name} {key} to {meta_path}")
+                print(f"Saved {split_name} {key} to {meta_path}")
     
     # Save metadata
     import json
     metadata_path = os.path.join(config.PREPROCESSED_DATA_PATH, "metadata.json")
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)
-    print(f"  ✓ Saved metadata to {metadata_path}")
+    print(f"  Saved metadata to {metadata_path}")
 
 
 def load_preprocessed_data(include_block_ids: bool = False, include_sequence_meta: bool = False):
@@ -337,13 +337,13 @@ def load_preprocessed_data(include_block_ids: bool = False, include_sequence_met
     tokenizer_path = os.path.join(config.PREPROCESSED_DATA_PATH, "tokenizer.pkl")
     with open(tokenizer_path, "rb") as f:
         tokenizer = pickle.load(f)
-    print(f"  ✓ Loaded tokenizer (vocab_size={tokenizer.vocab_size})")
+    print(f"Loaded tokenizer (vocab_size={tokenizer.vocab_size})")
     
     # Load data arrays
     train_data = np.load(os.path.join(config.PREPROCESSED_DATA_PATH, "train.npy"))
     val_data = np.load(os.path.join(config.PREPROCESSED_DATA_PATH, "val.npy"))
     test_data = np.load(os.path.join(config.PREPROCESSED_DATA_PATH, "test.npy"))
-    print(f"  ✓ Loaded data arrays")
+    print(f"Loaded data arrays")
     
     # Load metadata
     metadata_path = os.path.join(config.PREPROCESSED_DATA_PATH, "metadata.json")
@@ -359,7 +359,7 @@ def load_preprocessed_data(include_block_ids: bool = False, include_sequence_met
         shuffle_train=False  # Don't shuffle when loading
     )
     
-    print(f"  ✓ Created DataLoaders")
+    print(f"Created DataLoaders")
     
     block_ids = None
     if include_block_ids:

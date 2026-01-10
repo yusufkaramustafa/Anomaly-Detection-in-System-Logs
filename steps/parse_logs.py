@@ -96,15 +96,15 @@ def run_parse_logs(force_reparse=False, log_path=None, template_path=None):
             print("Parsing Results")
             print("=" * 70)
             
-            print("\n📊 Sample Parsed Logs:")
+            print("\n Sample Parsed Logs:")
             df_parsed.select(
                 "Timestamp", "Component", "EventId", "BlockId", "Message"
             ).show(20, truncate=False)
             
-            print("\n📋 Schema:")
+            print("\n Schema:")
             df_parsed.printSchema()
             
-            print("\n📈 Event Statistics:")
+            print("\n Event Statistics:")
             event_stats = get_event_statistics(df_parsed)
             event_stats.show()
             
@@ -140,7 +140,7 @@ def run_parse_logs(force_reparse=False, log_path=None, template_path=None):
             return df_parsed
             
         except Exception as e:
-            print(f"\n❌ Error in Step 1: {str(e)}")
+            print(f"\n Error in Step 1: {str(e)}")
             import traceback
             traceback.print_exc()
             raise

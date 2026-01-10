@@ -22,19 +22,9 @@ from scripts.benchmark_scalability import run_benchmark
 import config
 
 
-def print_banner():
-    """Print welcome banner."""
-    banner = """
-    ╔══════════════════════════════════════════════════════════════════╗
-    ║     HDFS Anomaly Detection Pipeline - Unsupervised Learning      ║
-    ╚══════════════════════════════════════════════════════════════════╝
-    """
-    print(banner)
-
-
 def print_step_info():
     """Print information about available steps."""
-    print("\n📋 Available Steps:")
+    print("\n Available Steps:")
     print("  Step 1: Parse raw HDFS logs and match to event templates")
     print("  Step 2: Build event sequences by block ID")
     print("  Step 3: Preprocess sequences for model training")
@@ -173,9 +163,7 @@ Examples:
     )
     
     args = parser.parse_args()
-    
-    # Print banner
-    print_banner()
+
     
     # Handle info command
     if args.step == "info":
@@ -191,14 +179,14 @@ Examples:
     if args.step == "benchmark":
         run_spark = args.benchmark_mode in ["both", "spark"]
         run_pandas = args.benchmark_mode in ["both", "pandas"]
-        print("\n🚀 Running scalability benchmark...\n")
+        print("\n Running scalability benchmark...\n")
         run_benchmark(run_spark=run_spark, run_pandas=run_pandas)
         return
     
     # Execute steps
     try:
         if args.step == "step1" or args.step == "all":
-            print("\n🚀 Starting Step 1...\n")
+            print("\n Starting Step 1...\n")
             run_parse_logs(
                 force_reparse=args.force_parse,
                 log_path=args.log_path,
@@ -207,7 +195,7 @@ Examples:
             print()
         
         if args.step == "step2" or args.step == "all":
-            print("\n🚀 Starting Step 2...\n")
+            print("\n Starting Step 2...\n")
             run_build_sequences(
                 force_rebuild=args.force_rebuild,
                 min_sequence_length=args.min_length
@@ -215,7 +203,7 @@ Examples:
             print()
         
         if args.step == "step3" or args.step == "all":
-            print("\n🚀 Starting Step 3...\n")
+            print("\n Starting Step 3...\n")
             run_preprocess(
                 force_reprocess=args.force_reprocess,
                 max_seq_length=args.max_seq_length,
@@ -225,7 +213,7 @@ Examples:
             print()
         
         if args.step == "step4" or args.step == "all":
-            print("\n🚀 Starting Step 4...\n")
+            print("\n Starting Step 4...\n")
             run_train_model(
                 force_retrain=args.force_retrain,
                 num_epochs=args.num_epochs,
@@ -235,7 +223,7 @@ Examples:
             print()
         
         if args.step == "step5" or args.step == "all":
-            print("\n🚀 Starting Step 5...\n")
+            print("\n Starting Step 5...\n")
             run_visualize(
                 force_recompute=args.force_recompute,
                 top_k=args.top_k
@@ -243,16 +231,14 @@ Examples:
             print()
         
         if args.step == "all":
-            print("\n" + "=" * 70)
-            print("✅ All steps completed successfully!")
-            print("=" * 70)
+            print(" All steps completed successfully!")
             print()
     
     except KeyboardInterrupt:
-        print("\n\n⚠️  Interrupted by user")
+        print("\n\n  Interrupted by user")
         sys.exit(1)
     except Exception as e:
-        print(f"\n\n❌ Pipeline failed: {str(e)}")
+        print(f"\n\n Pipeline failed: {str(e)}")
         sys.exit(1)
 
 
